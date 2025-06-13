@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Modelo de Usuarios
+model Usuario {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  nombre    String
+  apellido  String
+  telefono  String?
+  activo    Boolean  @default(true)
+  rol       RolUsuario
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt @default(now())
+  
+  // Relaciones
+  ingresos  Ingreso[]
+  egresos   Egreso[]
+  cierresCaja EstadoCaja[]
+
+  @@map("usuarios")
+  
+}
+
+// Enum para roles de usuario
+enum RolUsuario {
+  ADMINISTRADOR
+  PERSONAL_ADMINISTRATIVO
+  CONTADOR
+  
+  @@map("rol_usuario")
+}
+
+// Modelo de Categorías para Ingresos
+model CategoriaIngreso {
+  id          String @id @default(cuid())
+  nombre      String @unique
+  descripcion String?
+  activa      Boolean @default(true)
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  ingresos Ingreso[]
+  
+  @@map("categorias_ingreso")
+}
+
+// Modelo de Categorías para Egresos
+model CategoriaEgreso {
+  id          String @id @default(cuid())
+  nombre      String @unique
+  descripcion String?
+  activa      Boolean @default(true)
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  egresos Egreso[]
+  
+  @@map("categorias_egreso")
+}
+
+// Modelo de Métodos de Pago
+model MetodoPago {
+  id          String @id @default(cuid())
+  nombre      String @unique
+  descripcion String?
+  activo      Boolean @default(true)
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  ingresos Ingreso[]
+  egresos  Egreso[]
+  
+  @@map("metodos_pago")
+}
+
+// Modelo de Ingresos
+model Ingreso {
+  id          String   @id @default(cuid())
+  monto       Decimal  @db.Decimal(10, 2)
+  descripcion String
+  fecha       DateTime @default(now())
+  numeroRecibo String? @unique
+  
+  // Relaciones
+  categoriaId    String
+  categoria      CategoriaIngreso @relation(fields: [categoriaId], references: [id])
+  
+  metodoPagoId   String
+  metodoPago     MetodoPago @relation(fields: [metodoPagoId], references: [id])
+  
+  usuarioId      String
+  usuario        Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  @@map("ingresos")
+}
+
+// Modelo de Egresos
+model Egreso {
+  id          String   @id @default(cuid())
+  monto       Decimal  @db.Decimal(10, 2)
+  descripcion String
+  fecha       DateTime @default(now())
+  numeroComprobante String? @unique
+  proveedor   String?
+  
+  // Relaciones
+  categoriaId    String
+  categoria      CategoriaEgreso @relation(fields: [categoriaId], references: [id])
+  
+  metodoPagoId   String?
+  metodoPago     MetodoPago? @relation(fields: [metodoPagoId], references: [id])
+  
+  usuarioId      String
+  usuario        Usuario @relation(fields: [usuarioId], references: [id])
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  @@map("egresos")
+}
+
+// Modelo para el estado de la caja (balance diario)
+model EstadoCaja {
+  id           String   @id @default(cuid())
+  fecha        DateTime @unique @db.Date
+  saldoInicial Decimal  @default(0) @db.Decimal(10, 2)
+  totalIngresos Decimal @default(0) @db.Decimal(10, 2)
+  totalEgresos  Decimal @default(0) @db.Decimal(10, 2)
+  saldoFinal   Decimal  @default(0) @db.Decimal(10, 2)
+  cerrada      Boolean  @default(false)
+  
+  // Usuario que cerró la caja
+  usuarioCierreId String?
+  usuarioCierre   Usuario? @relation(fields: [usuarioCierreId], references: [id])
+  
+  // Timestamps
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  @@map("estado_caja")
+}
+
