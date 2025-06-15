@@ -44,16 +44,17 @@ export async function getIngresos(): Promise<ApiResponse<IngresoWithRelations[]>
 }
 
 
-export async function createIngreso(input: IngresoFormValues): Promise<ApiResponse<IngresoWithRelations>> {
+export async function createIngreso(input: IngresoFormValues, userId: string): Promise<ApiResponse<IngresoWithRelations>> {
   try {
     const ingresos = await db.ingreso.create({
       data: {
-        descripcion: input.descripcion,
+        descripcion: input.descripcion || "Sin descripción",
         fecha: new Date(input.fecha),
         monto: input.monto,
         categoriaId: input.categoriaId,
         metodoPagoId: input.metodoPagoId, 
-        usuarioId: input.usuarioId
+        usuarioId: userId,
+        cuentaId: input.cuentaId
       },
       include: {
         categoria: true,

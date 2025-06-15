@@ -26,13 +26,13 @@ import CrearIngreso, { IngresoFormValues } from "@/components/forms/ingreso";
 import { toast } from "@/components/ui/use-toast";
 import { createIngreso } from "@/app/actions/ingresos";
 
-export function CreateIngresoModal() {
+export function CreateIngresoModal({ userId }: { userId: string }) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useClientMediaQuery("(min-width: 768px)");
 
   const handleSubmit = async (input: IngresoFormValues) => {
     console.log("🚀 ~ handleSubmit ~ input:", input);
-    const res = await createIngreso(input)
+    const res = await createIngreso(input, userId)
     console.log("🚀 ~ handleSubmit ~ res:", res)
 
     if (res.status === 200) {

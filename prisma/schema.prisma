@@ -26,6 +26,7 @@ model Usuario {
   ingresos  Ingreso[]
   egresos   Egreso[]
   cierresCaja EstadoCaja[]
+  cuentas Cuenta[]
 
   @@map("usuarios")
   
@@ -92,6 +93,19 @@ model MetodoPago {
   @@map("metodos_pago")
 }
 
+model Cuenta {
+  id          String   @id @default(cuid())
+  nombre      String
+  numero      String
+  tipo       String
+  
+  ingresos Ingreso[]
+  egresos  Egreso[]
+  // Relaciones
+  admin      Usuario?  @relation(fields: [adminId], references: [id])
+  adminId    String?
+}
+
 // Modelo de Ingresos
 model Ingreso {
   id          String   @id @default(cuid())
@@ -101,6 +115,8 @@ model Ingreso {
   numeroRecibo String? @unique
   
   // Relaciones
+  cuentaId    String
+  cuenta      Cuenta @relation(fields: [cuentaId], references: [id])
   categoriaId    String
   categoria      CategoriaIngreso @relation(fields: [categoriaId], references: [id])
   
@@ -127,8 +143,12 @@ model Egreso {
   fecha       DateTime @default(now())
   numeroComprobante String? @unique
   proveedor   String?
+
   
   // Relaciones
+  cuentaId    String
+  cuenta      Cuenta @relation(fields: [cuentaId], references: [id])
+  
   categoriaId    String
   categoria      CategoriaEgreso @relation(fields: [categoriaId], references: [id])
   
