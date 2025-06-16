@@ -6,7 +6,7 @@ import { type Metadata } from "next";
 import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
-  title: "Template",
+  title: "Caja Contable",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
