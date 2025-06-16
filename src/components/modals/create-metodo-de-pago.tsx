@@ -25,14 +25,18 @@ import { useClientMediaQuery } from "@/hooks/useClientMediaQuery";
 import CrearIngreso, { IngresoFormValues } from "@/components/forms/ingreso";
 import { toast } from "@/components/ui/use-toast";
 import { createIngreso } from "@/app/actions/ingresos";
+import CrearCategoria, { CategoriaFormValues } from "../forms/categoria";
+import { createCategoriaIngreso } from "@/app/actions/categorias";
+import { createMetodoPago } from "@/app/actions/metodo-pago";
+import { MetodoPagoFormValues } from "../forms/metodo-pago";
 
-export function CreateIngresoModal({ userId, adminId }: { userId: string, adminId: string | null }) {
+export function CreateMetodoDePagoModal({ setMetodos }: { setMetodos?: any }) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useClientMediaQuery("(min-width: 768px)");
 
-  const handleSubmit = async (input: IngresoFormValues) => {
+  const handleSubmit = async (input: MetodoPagoFormValues) => {
     console.log("🚀 ~ handleSubmit ~ input:", input);
-    const res = await createIngreso(input, userId)
+    const res = await createMetodoPago(input)
     console.log("🚀 ~ handleSubmit ~ res:", res)
 
     if (res.status === 200) {
@@ -40,6 +44,7 @@ export function CreateIngresoModal({ userId, adminId }: { userId: string, adminI
         title: "Success",
         description: res.message,
       });
+      setMetodos((prevState: any) => [...prevState, {value: res.data.id, label: input.nombre}])
       //window.location.reload();
       return null;
     } else {
@@ -60,16 +65,15 @@ export function CreateIngresoModal({ userId, adminId }: { userId: string, adminI
             className="border border-gray-200 bg-white p-4 text-black hover:bg-gray-100"
           >
             <>
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Ingreso
+              <Plus className={`${!setMetodos ? "mr-2" : ""} h-4 w-4`} />
+              {!setMetodos && "Crear Metodo de Pago"}
             </>
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] md:w-[50vw] md:max-w-[50vw]">
           <DialogHeader>
-            <DialogDescription className="max-h-[80vh] w-full overflow-y-scroll p-2 no-scrollbar">
-              <DialogTitle className="mb-4">Crear Ingreso</DialogTitle>
-              <CrearIngreso adminId={adminId} onSubmit={handleSubmit} />
+            <DialogDescription className="max-h-[70vh] w-full overflow-y-scroll p-2">
+              <CrearCategoria onSubmit={handleSubmit} />
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -85,18 +89,16 @@ export function CreateIngresoModal({ userId, adminId }: { userId: string, adminI
           className="border border-gray-200 bg-white p-4 text-black hover:bg-gray-100"
         >
           <>
-            <Plus className="mr-2 h-4 w-4" />
-            Crear Ingreso
+            <Plus className={`${!setMetodos ? "mr-2" : ""} h-4 w-4`} />
+            {!setMetodos && "Crear Metodo de Pago"}
+
           </>
         </Button>
       </DrawerTrigger>
       <DrawerContent className="h-[80vh]">
         <DrawerHeader className="mb-10 text-left">
           <DrawerDescription className="max-h-[60vh] w-full overflow-y-scroll p-2">
-          <DrawerTitle className="mb-4">Crear Ingreso</DrawerTitle
-          >
-
-            <CrearIngreso adminId={adminId} onSubmit={handleSubmit} />
+            <CrearCategoria onSubmit={handleSubmit} />
           </DrawerDescription>
           <DrawerClose asChild>{/* <Button>Close</Button> */}</DrawerClose>
         </DrawerHeader>

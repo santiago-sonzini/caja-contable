@@ -13,9 +13,10 @@ import { CreateIngresoModal } from './create-ingreso-modal';
 interface ProductsClientProps {
   data: IngresoWithRelations[];
   userId: string;
+  adminId: string | null;
 }
 
-export const IngresoClient: React.FC<ProductsClientProps> = ({ data, userId }) => {
+export const IngresoClient: React.FC<ProductsClientProps> = ({ data, userId, adminId }) => {
 
   return (
     <>
@@ -24,7 +25,7 @@ export const IngresoClient: React.FC<ProductsClientProps> = ({ data, userId }) =
           title={`Ingresos (${data.length})`}
           description=""
         />
-       <CreateIngresoModal userId={userId} />
+       <CreateIngresoModal userId={userId} adminId={adminId} />
       </div>
       <Separator />
       <DataTable searchKey="fecha" columns={columns} data={data} />

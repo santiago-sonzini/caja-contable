@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next-nprogress-bar";
 import Loading from "@/components/loading";
 import { CategoriaIngreso, Cuenta, MetodoPago } from "@prisma/client";
-import { getCategorias } from "@/app/actions/categorias";
+import { getCategoriasIngreso } from "@/app/actions/categorias";
 import {
   Select,
   SelectContent,
@@ -28,6 +28,9 @@ import {
 import { getMetodosDePago } from "@/app/actions/metodo-pago";
 import { getCuentas } from "@/app/actions/cuentas";
 import { toast } from "../ui/use-toast";
+import { CreateCategoriaIngresoModal } from "../modals/create-categoria-ingreso";
+import { CreateMetodoDePagoModal } from "../modals/create-metodo-de-pago";
+import { CreateCuentaModal } from "../modals/create-cuenta";
 
 // Zod Schema para validación
 const formSchema = z.object({
@@ -45,8 +48,10 @@ export type IngresoFormValues = z.infer<typeof formSchema>;
 
 export default function CrearIngreso({
   onSubmit,
+  adminId,
 }: {
   onSubmit: (values: IngresoFormValues) => Promise<any>;
+  adminId: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -58,7 +63,7 @@ export default function CrearIngreso({
 
   useEffect(() => {
     const fetchData = async () => {
-      const resCategorias = await getCategorias();
+      const resCategorias = await getCategoriasIngreso();
       const resMetodos = await getMetodosDePago();
       const resCuentas = await getCuentas();
 
@@ -109,6 +114,8 @@ export default function CrearIngreso({
 
   const handleSubmit = async (values: IngresoFormValues) => {
     setLoading(true);
+    console.log("🚀 ~ handleSubmit ~ values:", values.fecha)
+    console.log("🚀 ~ handleSubmit ~ values:", new Date(values.fecha))
     try {
       await onSubmit(values);
     } catch (error) {
@@ -156,68 +163,83 @@ export default function CrearIngreso({
             <FormItem>
               <FormLabel>Fecha</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" lang="es-AR" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="categoriaId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoría</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {categoryOptions.map((option: any) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="metodoPagoId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Metodo de pago</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un metodo de pago" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {metodosDePago.map((option: any) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        <div className="flex items-center justify-between gap-2">
+          <FormField
+            control={form.control}
+            name="categoriaId"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Categoría</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una categoría" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categoryOptions.map((option: any) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="mt-2 flex items-center pt-4">
+            <CreateCategoriaIngresoModal setCategorias={setCategoryOptions} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <FormField
+            control={form.control}
+            name="metodoPagoId"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Metodo de pago</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un metodo de pago" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {metodosDePago.map((option: any) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="mt-2 flex items-center pt-4">
+            <CreateMetodoDePagoModal setMetodos={setMetodosDePago} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
         <FormField
           control={form.control}
           name="cuentaId"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="w-full">
               <FormLabel>Cuenta</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
@@ -228,13 +250,11 @@ export default function CrearIngreso({
                 <SelectContent>
                   {cuentas.map((option: any) => (
                     <SelectItem key={option.value} value={option.value}>
-                      <div className="w-full flex items-center justify-between">
-                      <p>
-                        {option.label.split(" - ")[0]}
-                      </p>
-                      <p className="text-gray-500">
-                        #{option.label.split(" - ")[1]}
-                      </p>
+                      <div className="flex w-full items-center justify-between">
+                        <p>{option.label.split(" - ")[0]}</p>
+                        <p className="text-gray-500">
+                          #{option.label.split(" - ")[1]}
+                        </p>
                       </div>
                     </SelectItem>
                   ))}
@@ -244,8 +264,10 @@ export default function CrearIngreso({
             </FormItem>
           )}
         />
-
-       
+        <div className="mt-2 flex items-center pt-4">
+          {adminId && <CreateCuentaModal setCuentas={setCuentas} adminId={adminId} />}
+          </div>
+        </div>
 
         <div className="pt-2">
           <Button type="submit" disabled={loading}>

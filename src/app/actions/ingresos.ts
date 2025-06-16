@@ -49,7 +49,7 @@ export async function createIngreso(input: IngresoFormValues, userId: string): P
     const ingresos = await db.ingreso.create({
       data: {
         descripcion: input.descripcion || "Sin descripción",
-        fecha: new Date(input.fecha),
+        fecha: new Date(input.fecha + 'T00:00:00.000Z'),
         monto: input.monto,
         categoriaId: input.categoriaId,
         metodoPagoId: input.metodoPagoId, 
