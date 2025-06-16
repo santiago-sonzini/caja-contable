@@ -2,14 +2,17 @@
 
 import { CuentaFormValues } from "@/components/forms/cuenta";
 import { db } from "@/server/db";
+import { Cuenta, Prisma } from "@prisma/client";
 
-interface ApiResponse {
+interface ApiResponse<T> {
   status: number;
   message: string;
-  data?: any;
+  data?: T;
 }
 
-export async function createCuenta(input: CuentaFormValues, adminId: string): Promise<ApiResponse> {
+
+
+export async function createCuenta(input: CuentaFormValues, adminId: string): Promise<ApiResponse<Cuenta>> {
     try {
       const cuentas = await db.cuenta.create({
         data: {
@@ -26,17 +29,60 @@ export async function createCuenta(input: CuentaFormValues, adminId: string): Pr
       return {status: 200, message: "cuenta creada correctamente", data: cuentas};
     } catch (error) {
       console.log("error", error);
-      return {status: 500, message: "error al crear cuenta", data: null};
+      return {status: 500, message: "error al crear cuenta",};
     }
 }
 
-export async function getCuentas(): Promise<ApiResponse> {
+export async function getCuentas(): Promise<ApiResponse<Cuenta[]>> {
     try {
       const metodos = await db.cuenta.findMany();
       return {status: 200, message: "cuentas encontradas", data: metodos};
     } catch (error) {
       console.log("error", error);
-      return {status: 500, message: "error al obtener cuentas", data: null};
+      return {status: 500, message: "error al obtener cuentas"};
     }
  
 }
+
+export type IngresoWithCategoria = Prisma.IngresoGetPayload<{
+      include:{
+        categoria: true
+      }
+}>; 
+
+export type CuentaWithRelations = Prisma.CuentaGetPayload<{
+  include: {
+    ingresos: {
+      include:{
+        categoria: true
+      }
+    };
+    egresos: true;
+    admin: true;
+  };
+}>; 
+
+
+export const getCuenta = async (id: string): Promise<ApiResponse<CuentaWithRelations>> => {
+  try {
+    const cuenta = await db.cuenta.findUniqueOrThrow({
+      where: {
+        id: id,
+      },
+      include: {
+          ingresos: {
+            include:{
+              categoria: true
+            }
+          },
+          egresos: true,
+          admin: true,
+      }
+    });
+    return {status: 200, message: "cuenta encontrada", data: cuenta};
+  } catch (error) {
+    console.log("error", error);
+    return {status: 500, message: "error al obtener cuenta"};
+  }
+};
+

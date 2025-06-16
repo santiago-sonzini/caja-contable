@@ -37,6 +37,8 @@ export const columns: ColumnDef<IngresoWithRelations>[] = [
     header: 'FECHA',
     cell: ({ row }) => {
       const fecha = new Date(row.getValue('fecha'));
+fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+      
       return (
         <div className="font-medium">
           {fecha.toLocaleDateString('es-AR', {
