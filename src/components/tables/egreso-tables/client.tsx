@@ -2,25 +2,26 @@
 import { DataTable } from '@/components/ui/data-table';
 import { Heading } from '@/components/ui/heading';
 import { Separator } from '@/components/ui/separator';
-import { columns, IngresoWithRelations } from './columns';
-import { CreateIngresoModal } from './create-ingreso-modal';
+import { EgresoWithRelations, columns } from './columns';
+import { CreateEgresoModal } from './create-egreso-modal';
+
 
 interface ProductsClientProps {
-  data: IngresoWithRelations[];
+  data: EgresoWithRelations[];
   userId: string;
   adminId: string | null;
 }
 
-export const IngresoClient: React.FC<ProductsClientProps> = ({ data, userId, adminId }) => {
+export const EgresoClient: React.FC<ProductsClientProps> = ({ data, userId, adminId }) => {
 
   return (
     <>
       <div className="flex items-start justify-between">
         <Heading
-          title={`Ingresos (${data.length})`}
+          title={`Egresos (${data.length})`}
           description=""
         />
-       <CreateIngresoModal userId={userId} adminId={adminId} />
+       <CreateEgresoModal userId={userId} adminId={adminId} />
       </div>
       <Separator />
       <DataTable searchKey="fecha" columns={columns} data={data} />
