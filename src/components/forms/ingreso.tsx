@@ -70,7 +70,8 @@ export default function CrearIngreso({
       if (
         resCategorias.status === 200 &&
         resMetodos.status === 200 &&
-        resCuentas.status === 200
+        resCuentas.status === 200 &&
+        resCuentas.data
       ) {
         setMetodosDePago(
           resMetodos.data.map((c: MetodoPago) => ({
@@ -88,8 +89,8 @@ export default function CrearIngreso({
           resCuentas.data.map((c: Cuenta) => ({
             value: c.id,
             label: `${c.nombre} - ${c.numero}`,
-          })),
-        );
+          }))
+        )
       } else {
         toast({
           title: "Error",
