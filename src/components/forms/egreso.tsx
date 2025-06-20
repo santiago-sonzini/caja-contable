@@ -26,7 +26,6 @@ export const formSchema = z.object({
   categoriaId: z.string().min(1, "Selecciona una categoría"),
   cuentaId: z.string().min(1, "Selecciona una cuenta"),
   metodoPagoId: z.string().min(1, "Selecciona un método de pago"),
-  usuarioId: z.string().min(1, "Selecciona un usuario"),
 });
 
 export type EgresoFormValues = z.infer<typeof formSchema>;
@@ -48,7 +47,6 @@ export default function CrearEgreso({
       categoriaId: "",
       cuentaId: "",
       metodoPagoId: "",
-      usuarioId: adminId ?? "",
     },
   });
 
@@ -194,31 +192,7 @@ export default function CrearEgreso({
           )}
         />
 
-        {/* Select Usuario (solo si es admin, por ejemplo) */}
-        {adminId && (
-          <FormField
-            control={form.control}
-            name="usuarioId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Usuario</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un usuario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usuarios.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+       
 
         <Button type="submit">Guardar Egreso</Button>
       </form>
