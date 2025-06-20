@@ -50,6 +50,12 @@ export type IngresoWithCategoria = Prisma.IngresoGetPayload<{
       }
 }>; 
 
+export type EgresoWithCategoria = Prisma.EgresoGetPayload<{
+      include:{
+        categoria: true
+      }
+}>;
+
 export type CuentaWithRelations = Prisma.CuentaGetPayload<{
   include: {
     ingresos: {
@@ -57,7 +63,11 @@ export type CuentaWithRelations = Prisma.CuentaGetPayload<{
         categoria: true
       }
     };
-    egresos: true;
+    egresos: {
+      include:{
+        categoria: true
+      }
+    };
     admin: true;
   };
 }>; 
@@ -75,7 +85,11 @@ export const getCuenta = async (id: string): Promise<ApiResponse<CuentaWithRelat
               categoria: true
             }
           },
-          egresos: true,
+          egresos: {
+            include:{
+              categoria: true
+            }
+          },
           admin: true,
       }
     });

@@ -61,6 +61,7 @@ export default function CrearIngreso({
   const [metodosDePago, setMetodosDePago] = useState<SelectOptions>([]);
   const [cuentas, setCuentas] = useState<SelectOptions>([]);
 
+
   useEffect(() => {
     const fetchData = async () => {
       const resCategorias = await getCategoriasIngreso();
@@ -84,6 +85,7 @@ export default function CrearIngreso({
             label: c.nombre,
           })),
         );
+        resCuentas.data && 
         setCuentas(
           resCuentas.data.map((c: Cuenta) => ({
             value: c.id,

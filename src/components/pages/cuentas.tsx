@@ -33,7 +33,8 @@ import {
   User,
   CreditCard,
 } from "lucide-react";
-import { IngresoBarChart } from "../charts/ingreso-categoria";
+import  IngresoCharts  from "../charts/ingreso-categoria";
+import EgresoCharts from "../charts/egreso-categoria";
 
 // Tipos
 type Cuenta = {
@@ -59,12 +60,14 @@ export default function CuentasPage({
     cuentas[0]?.id || null,
   );
   const [cuenta, setCuenta] = useState<CuentaWithRelations | null>(null);
+  const [todasLasCuentas, setTodasLasCuentas] = useState<CuentaWithRelations[]>([]);
   const [desde, setDesde] = useState<string>("");
   const [hasta, setHasta] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [mostrarTodas, setMostrarTodas] = useState(false);
 
   useEffect(() => {
-    if (!cuentaId) return;
+    if (!cuentaId || cuentaId === "todas") return;
 
     setLoading(true);
     getCuenta(cuentaId).then((res) => {
@@ -72,6 +75,28 @@ export default function CuentasPage({
       setLoading(false);
     });
   }, [cuentaId]);
+
+  // Cargar todas las cuentas cuando se selecciona "todas"
+  useEffect(() => {
+    if (cuentaId === "todas") {
+      setMostrarTodas(true);
+      setLoading(true);
+      
+      Promise.all(
+        cuentas.map(cuenta => getCuenta(cuenta.id))
+      ).then((responses) => {
+        const cuentasConDatos = responses
+          .filter(res => res.status === 200 && res.data)
+          .map(res => res.data!);
+        
+        setTodasLasCuentas(cuentasConDatos);
+        setLoading(false);
+      });
+    } else {
+      setMostrarTodas(false);
+      setTodasLasCuentas([]);
+    }
+  }, [cuentaId, cuentas]);
 
   const filtrar = (movs: Ingreso[]) => {
     return movs.filter((m) => {
@@ -94,9 +119,22 @@ export default function CuentasPage({
   };
 
   const datosGrafico = () => {
-    if (!cuenta) return [];
-    const ingresos = filtrar(cuenta.ingresos);
-    const egresos = filtrarE(cuenta.egresos);
+    let ingresosTotales: Ingreso[] = [];
+    let egresosTotales: Egreso[] = [];
+
+    if (mostrarTodas) {
+      // Combinar datos de todas las cuentas
+      todasLasCuentas.forEach(cuenta => {
+        ingresosTotales = [...ingresosTotales, ...cuenta.ingresos];
+        egresosTotales = [...egresosTotales, ...cuenta.egresos];
+      });
+    } else if (cuenta) {
+      ingresosTotales = cuenta.ingresos;
+      egresosTotales = cuenta.egresos;
+    }
+
+    const ingresos = filtrar(ingresosTotales);
+    const egresos = filtrarE(egresosTotales);
 
     const agrupado: Record<string, { ingresos: number; egresos: number }> = {};
 
@@ -106,14 +144,12 @@ export default function CuentasPage({
       const fecha = format(new Date(date), "yyyy-MM-dd");
 
       agrupado[fecha] = agrupado[fecha] || { ingresos: 0, egresos: 0 };
-      // Convert Decimal to number
       agrupado[fecha].ingresos += Number(i.monto);
     });
 
     egresos.forEach((e) => {
       const fecha = format(new Date(e.fecha), "yyyy-MM-dd");
       agrupado[fecha] = agrupado[fecha] || { ingresos: 0, egresos: 0 };
-      // Convert Decimal to number - this fixes the TypeScript error
       agrupado[fecha].egresos += Number(e.monto);
     });
 
@@ -131,10 +167,21 @@ export default function CuentasPage({
   };
 
   const calcularTotales = () => {
-    if (!cuenta) return { totalIngresos: 0, totalEgresos: 0, saldo: 0 };
+    let ingresosTotales: Ingreso[] = [];
+    let egresosTotales: Egreso[] = [];
 
-    const ingresos = filtrar(cuenta.ingresos);
-    const egresos = filtrarE(cuenta.egresos);
+    if (mostrarTodas) {
+      todasLasCuentas.forEach(cuenta => {
+        ingresosTotales = [...ingresosTotales, ...cuenta.ingresos];
+        egresosTotales = [...egresosTotales, ...cuenta.egresos];
+      });
+    } else if (cuenta) {
+      ingresosTotales = cuenta.ingresos;
+      egresosTotales = cuenta.egresos;
+    }
+
+    const ingresos = filtrar(ingresosTotales);
+    const egresos = filtrarE(egresosTotales);
 
     const totalIngresos = ingresos.reduce((sum, i) => sum + Number(i.monto), 0);
     const totalEgresos = egresos.reduce((sum, e) => sum + Number(e.monto), 0);
@@ -168,6 +215,25 @@ export default function CuentasPage({
     return null;
   };
 
+  // Obtener todos los ingresos para el componente IngresoBarChart
+  const obtenerTodosLosIngresos = () => {
+    if (mostrarTodas) {
+      return todasLasCuentas.flatMap(cuenta => cuenta.ingresos);
+    } else if (cuenta) {
+      return cuenta.ingresos;
+    }
+    return [];
+  };
+
+  const obtenerTodosLosEgresos = () => {
+    if (mostrarTodas) {
+      return todasLasCuentas.flatMap(cuenta => cuenta.egresos);
+    } else if (cuenta) {
+      return cuenta.egresos;
+    }
+    return [];
+  };
+
   return (
     <div className="mt-10 min-h-screen bg-background from-slate-50 to-blue-50 p-6">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -198,6 +264,14 @@ export default function CuentasPage({
                     <SelectValue placeholder="Selecciona una cuenta" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="todas">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default" className="text-xs bg-purple-600">
+                          TODAS
+                        </Badge>
+                        Todas las cuentas
+                      </div>
+                    </SelectItem>
                     {cuentas.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         <div className="flex items-center gap-2">
@@ -246,56 +320,59 @@ export default function CuentasPage({
             <CardContent className="p-8 text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
               <p className="text-text mt-2">
-                Cargando información de la cuenta...
+                {mostrarTodas ? "Cargando información de todas las cuentas..." : "Cargando información de la cuenta..."}
               </p>
             </CardContent>
           </Card>
         )}
 
-        {cuenta && !loading && (
-          <>
-            {/* Account Info Card */}
-            <Card className="border-0 border-teal-600 bg-background shadow-lg backdrop-blur-sm">
-              <CardHeader className="rounded-t-lg bg-teal-600 text-white">
-                <CardTitle className="flex items-center gap-2">
-                  Información de la Cuenta
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                  <div className="space-y-1">
-                    <p className="text-text text-sm font-medium">Nombre</p>
-                    <p className="text-text text-lg font-semibold">
-                      {cuenta.nombre}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-text text-sm font-medium">Número</p>
-                    <p className="text-text font-mono text-lg font-semibold">
-                      {cuenta.numero}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-text text-sm font-medium">Tipo</p>
-                    <Badge variant="secondary" className="text-sm">
-                      {cuenta.tipo}
-                    </Badge>
-                  </div>
+        {/* Mostrar información de cuenta individual solo si no es "todas" */}
+        {cuenta && !loading && !mostrarTodas && (
+          <Card className="border-0 border-teal-600 bg-background shadow-lg backdrop-blur-sm">
+            <CardHeader className="rounded-t-lg bg-teal-600 text-white">
+              <CardTitle className="flex items-center gap-2">
+                Información de la Cuenta
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-1">
+                  <p className="text-text text-sm font-medium">Nombre</p>
+                  <p className="text-text text-lg font-semibold">
+                    {cuenta.nombre}
+                  </p>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-text text-sm font-medium">Número</p>
+                  <p className="text-text font-mono text-lg font-semibold">
+                    {cuenta.numero}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-text text-sm font-medium">Tipo</p>
+                  <Badge variant="secondary" className="text-sm">
+                    {cuenta.tipo}
+                  </Badge>
+                </div>
+              </div>
 
-                {cuenta.admin && (
-                  <div className="mt-4 border-t border-gray-200 pt-4">
-                    <p className="text-text text-sm font-medium">
-                      Administrador
-                    </p>
-                    <p className="text-text text-lg font-semibold">
-                      {cuenta.admin.nombre}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {cuenta.admin && (
+                <div className="mt-4 border-t border-gray-200 pt-4">
+                  <p className="text-text text-sm font-medium">
+                    Administrador
+                  </p>
+                  <p className="text-text text-lg font-semibold">
+                    {cuenta.admin.nombre}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
+        {/* Mostrar resumen cuando hay datos (cuenta individual o todas las cuentas) */}
+        {((cuenta && !mostrarTodas) || (mostrarTodas && todasLasCuentas.length > 0)) && !loading && (
+          <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
@@ -303,7 +380,7 @@ export default function CuentasPage({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-green-600">
-                        Total Ingresos
+                        Total Ingresos {mostrarTodas && "(Todas las cuentas)"}
                       </p>
                       <p className="text-2xl font-bold text-green-700">
                         {formatCurrency(totalIngresos)}
@@ -321,7 +398,7 @@ export default function CuentasPage({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-red-600">
-                        Total Egresos
+                        Total Egresos {mostrarTodas && "(Todas las cuentas)"}
                       </p>
                       <p className="text-2xl font-bold text-red-700">
                         {formatCurrency(totalEgresos)}
@@ -347,7 +424,7 @@ export default function CuentasPage({
                       <p
                         className={`text-sm font-medium ${saldo >= 0 ? "text-blue-600" : "text-orange-600"}`}
                       >
-                        Saldo Actual
+                        Saldo {mostrarTodas ? "Total" : "Actual"} {mostrarTodas && "(Todas las cuentas)"}
                       </p>
                       <p
                         className={`text-2xl font-bold ${saldo >= 0 ? "text-blue-700" : "text-orange-700"}`}
@@ -376,7 +453,7 @@ export default function CuentasPage({
               <CardHeader className="rounded-t-lg bg-indigo-600 text-white">
                 <CardTitle className="flex items-center gap-2">
                   <BarChart className="h-5 w-5" />
-                  Ingresos vs Egresos por Fecha
+                  Ingresos vs Egresos por Fecha {mostrarTodas && "(Todas las cuentas)"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-text flex items-center justify-center p-6">
@@ -436,7 +513,16 @@ export default function CuentasPage({
             </Card>
           </>
         )}
-        {cuenta && <IngresoBarChart ingresos={cuenta.ingresos} />}
+        
+        {/* Mostrar IngresoBarChart solo cuando hay datos */}
+        <div className="flex flex-col lg:flex-row justify-center items-center gap-5">
+        {((cuenta && !mostrarTodas) || (mostrarTodas && todasLasCuentas.length > 0)) && (
+          <IngresoCharts ingresos={obtenerTodosLosIngresos()} />
+        )}
+        {((cuenta && !mostrarTodas) || (mostrarTodas && todasLasCuentas.length > 0)) && (
+          <EgresoCharts egresos={obtenerTodosLosEgresos()} />
+        )}
+        </div>
       </div>
     </div>
   );
